@@ -1,4 +1,4 @@
-package com.dongkyeom.trajectory.processor.gps.repository;
+package com.dongkyeom.trajectory.processor.gps.persistence.repository;
 
 import com.dongkyeom.trajectory.processor.gps.domain.GPS;
 
