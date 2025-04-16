@@ -1,9 +1,9 @@
-package com.dongkyeom.trajectory.processor.gps.repository.impl;
+package com.dongkyeom.trajectory.processor.gps.persistence.repository.impl;
 
 import com.dongkyeom.trajectory.processor.core.exception.error.ErrorCode;
 import com.dongkyeom.trajectory.processor.core.exception.type.CommonException;
 import com.dongkyeom.trajectory.processor.gps.domain.GPS;
-import com.dongkyeom.trajectory.processor.gps.repository.GPSRepository;
+import com.dongkyeom.trajectory.processor.gps.persistence.repository.GPSRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.Connection;
