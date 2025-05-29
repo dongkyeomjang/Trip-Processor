@@ -21,6 +21,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    google()
 }
 
 bootJar {
@@ -56,6 +57,9 @@ dependencies {
 
     // JSON
     implementation("net.minidev:json-smart:2.5.2")
+
+    implementation 'com.mapbox.mapboxsdk:mapbox-sdk-services:5.8.0'
+
 
     // Testing Dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

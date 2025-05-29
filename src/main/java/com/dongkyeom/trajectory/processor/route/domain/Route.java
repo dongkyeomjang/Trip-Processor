@@ -3,6 +3,8 @@ package com.dongkyeom.trajectory.processor.route.domain;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 public class Route {
 
@@ -18,16 +20,17 @@ public class Route {
 
     private final String fullGeometry;
 
-    private final Step[] steps;
+    private final List<Double> latitudes;
 
-    private final WayPoint[] wayPoints;
+    private final List<Double> longitudes;
 
     @Builder
-    public Route(String tripId, String agentId, String fullGeometry, Step[] steps, WayPoint[] wayPoints) {
+    public Route(String tripId, String agentId, String fullGeometry,
+                 List<Double> latitudes, List<Double> longitudes) {
         this.tripId = tripId;
         this.agentId = agentId;
         this.fullGeometry = fullGeometry;
-        this.steps = steps;
-        this.wayPoints = wayPoints;
+        this.latitudes = latitudes;
+        this.longitudes = longitudes;
     }
 }

@@ -3,8 +3,6 @@ package com.dongkyeom.trajectory.processor.route.repository.impl;
 import com.dongkyeom.trajectory.processor.core.exception.error.ErrorCode;
 import com.dongkyeom.trajectory.processor.core.exception.type.CommonException;
 import com.dongkyeom.trajectory.processor.route.domain.Route;
-import com.dongkyeom.trajectory.processor.route.domain.Step;
-import com.dongkyeom.trajectory.processor.route.domain.WayPoint;
 import com.dongkyeom.trajectory.processor.route.repository.RouteRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -13,10 +11,15 @@ import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.springframework.stereotype.Repository;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -32,12 +35,9 @@ public class RouteRepositoryImpl implements RouteRepository {
             Put put = new Put(route.getTripId().getBytes());
             put.addColumn("info".getBytes(), "agentId".getBytes(), route.getAgentId().getBytes());
             put.addColumn("info".getBytes(), "geometry".getBytes(), route.getFullGeometry().getBytes());
+            put.addColumn("info".getBytes(), "latitude".getBytes(), objectMapper.writeValueAsBytes(route.getLatitudes()));
+            put.addColumn("info".getBytes(), "longitude".getBytes(), objectMapper.writeValueAsBytes(route.getLongitudes()));
 
-            String stepsJson = objectMapper.writeValueAsString(route.getSteps());
-            put.addColumn("info".getBytes(), "steps".getBytes(), stepsJson.getBytes());
-
-            String waypointsJson = objectMapper.writeValueAsString(route.getWayPoints());
-            put.addColumn("info".getBytes(), "waypoints".getBytes(), waypointsJson.getBytes());
 
             table.put(put);
             table.close();
@@ -47,7 +47,7 @@ public class RouteRepositoryImpl implements RouteRepository {
     }
 
     @Override
-    public Route findByIdOrElseThrow(String tripId) {
+    public Route findByIdOrElseNull(String tripId) {
         try {
             Table table = connection.getTable(TableName.valueOf("route"));
             Get get = new Get(tripId.getBytes());
@@ -61,8 +61,12 @@ public class RouteRepositoryImpl implements RouteRepository {
                     .tripId(tripId)
                     .agentId(new String(result.getValue("info".getBytes(), "agentId".getBytes())))
                     .fullGeometry(new String(result.getValue("info".getBytes(), "geometry".getBytes())))
-                    .steps(objectMapper.readValue(new String(result.getValue("info".getBytes(), "steps".getBytes())), Step[].class))
-                    .wayPoints(objectMapper.readValue(new String(result.getValue("info".getBytes(), "waypoints".getBytes())), WayPoint[].class))
+                    .latitudes(objectMapper.readValue(
+                            result.getValue("info".getBytes(), "latitude".getBytes()),
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, Double.class)))
+                    .longitudes(objectMapper.readValue(
+                            result.getValue("info".getBytes(), "longitude".getBytes()),
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, Double.class)))
                     .build();
 
             table.close();
@@ -71,7 +75,36 @@ public class RouteRepositoryImpl implements RouteRepository {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (CommonException e) {
-            throw new CommonException(ErrorCode.NOT_FOUND_ROUTE);
+            return null;
         }
+    }
+
+    @Override
+    public List<Route> findAll() {
+        List<Route> routes = new ArrayList<>();
+        try (Table table = connection.getTable(TableName.valueOf("route"));
+             ResultScanner scanner = table.getScanner(new Scan())) {
+
+            for (Result result : scanner) {
+                String tripId = Bytes.toString(result.getRow());
+
+                Route route = Route.builder()
+                        .tripId(tripId)
+                        .agentId(Bytes.toString(result.getValue(Bytes.toBytes("info"), Bytes.toBytes("agentId"))))
+                        .fullGeometry(Bytes.toString(result.getValue(Bytes.toBytes("info"), Bytes.toBytes("geometry"))))
+                        .latitudes(objectMapper.readValue(
+                                result.getValue(Bytes.toBytes("info"), Bytes.toBytes("latitude")),
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, Double.class)))
+                        .longitudes(objectMapper.readValue(
+                                result.getValue(Bytes.toBytes("info"), Bytes.toBytes("longitude")),
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, Double.class)))
+                        .build();
+
+                routes.add(route);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return routes;
     }
 }
