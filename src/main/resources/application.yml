@@ -1,6 +1,6 @@
 spring:
   application:
-    name: "Trajectory-Processor Server API"
+    name: "Trip-Processor Server API"
   profiles:
     active: local
 
